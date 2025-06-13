@@ -12,3 +12,8 @@ Day 3 - Module 3 - Poject : Develop A RAG systemfor Question Answering - https:/
             3. distilgpt2 (Lightweight),
             Ask questions in the input Filed,
             If you want to exit Type "exit",Pdf will be downloaded in the local System.
+Day 4 - Module 4 - Project : HealthCare policy sales agent 
+    Git Link - https://github.com/B-harathi/Agentic_AI_Workshop.git
+    Agent Link - https://29ddf06043977814f2.gradio.live
+
+Day 5 - Module 6 - Project : Study Assistant for Quiz Question Generation - https://github.com/B-harathi/Agentic_AI_Workshop.git
