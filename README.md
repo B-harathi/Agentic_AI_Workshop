@@ -28,3 +28,9 @@ Day 4 - Module 5 - Project : Research Agent using React Patter
 
 
 Day 5 - Module 6 - Project : Study Assistant for Quiz Question Generation - https://github.com/B-harathi/Agentic_AI_Workshop.git
+      - Module 7 - project : Buliding an intelligent travel assistant AI - https://github.com/B-harathi/Agentic_AI_Workshop.git
+
+Day 6 - Hackerthon - Git link - https://github.com/B-harathi/Agentic_AI_Workshop.git
+        Upload the csv file link - https://drive.google.com/file/d/1uxOIF3UK6NDsnVbYDCRGXnbfq_5tYL20/view?usp=sharing
+        Upload and then select the time Range 
+        Then download the unflagged datas
