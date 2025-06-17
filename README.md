@@ -35,3 +35,13 @@ Day 6 - Hackerthon - Git link - https://github.com/B-harathi/Agentic_AI_Workshop
 Upload the csv file link - https://drive.google.com/file/d/1uxOIF3UK6NDsnVbYDCRGXnbfq_5tYL20/view?usp=sharing
 Upload and then select the time Range
 Then download the unflagged datas
+
+Day 7 - Hackerthon - Git link - https://github.com/B-harathi/Agentic_AI_Workshop.git
+Upload the csv file link - https://drive.google.com/file/d/1uxOIF3UK6NDsnVbYDCRGXnbfq_5tYL20/view?usp=sharing
+Upload and then select the time Range
+
+used Today:Select to get the Anlysis 
+Comprehensive Analysis
+Anomaly Detection
+Benchmark Analysis
+Insight Generation
