@@ -18,7 +18,14 @@ Day 3 - Module 3 - Poject : Develop A RAG systemfor Question Answering
             If you want to exit Type "exit",Pdf will be downloaded in the local System.
 Day 4 - Module 4 - Project : HealthCare policy sales agent 
     Git Link - https://github.com/B-harathi/Agentic_AI_Workshop.git
-    Agent Link - https://29ddf06043977814f2.gradio.live
+    Agent Link - https://app.wordware.ai/explore/apps/872837cf-b695-4f7b-9a67-259f3172e736
+    AGE - 50
+    FAMILY- Married with 2 children (ages 10 and 14), spouse age 42. Primary policyholder is employed full-time.
+    POLICY_DETAILS - I would like to know what health insurance plan options are available for my family and what coverage benefits we would receive. We're particularly interested in comprehensive family coverage that includes regular check-ups and specialist visits.
+
+
+
+
 Day 4 - Module 5 - Project : Research Agent using React Patter 
     Git Link - https://github.com/B-harathi/Agentic_AI_Workshop.git
             🎯 Topic Input Options:
