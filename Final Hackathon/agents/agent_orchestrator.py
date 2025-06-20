@@ -100,7 +100,11 @@ async def upload_budget_file(file: UploadFile = File(...)):
 
         # Step 1: Extract and structure budget
         extract_result = budget_loader.execute(f"extract_budget_from_file:{file_path}")
+        print(f"[DEBUG] Extract result: {extract_result}")
+        print(f"[DEBUG] Extracted content (first 500 chars): {budget_loader.extracted_content[:500]}")
         structure_result = budget_loader.execute("structure_budget_rules:extracted_content")
+        print(f"[DEBUG] Structure result: {structure_result}")
+        print(f"[DEBUG] Structured budget data: {json.dumps(budget_loader.get_budget_data(), indent=2)}")
         rag_result = budget_loader.execute("create_rag_vectorstore:extracted_content")
         global_state["budget_data"] = budget_loader.get_budget_data()
 

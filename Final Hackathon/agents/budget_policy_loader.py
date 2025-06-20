@@ -14,6 +14,7 @@ import config
 import PyPDF2
 import docx
 import re
+import io
 
 class BudgetPolicyLoaderAgent(BaseAgent):
     def __init__(self):
@@ -108,12 +109,35 @@ Question: {input}
     def structure_budget_rules(self, extracted_content: str = None) -> str:
         """Structure budget data into JSON format with departments/vendors/categories"""
         try:
-            # Use provided content or stored content
             content_to_process = extracted_content or self.extracted_content
-            
             if not content_to_process:
                 return "Error: No content available to structure. Please extract content from a file first."
-            
+
+            # --- NEW: Handle tabular data from Excel/CSV ---
+            if content_to_process.startswith("Budget Excel Data:") or content_to_process.startswith("Budget CSV Data:"):
+                # Extract the table part
+                table_str = content_to_process.split(":", 1)[1].strip()
+                # Try to parse as DataFrame
+                try:
+                    df = pd.read_csv(io.StringIO(table_str), sep=r"\s{2,}|\t|,", engine='python')
+                except Exception:
+                    # Fallback: try whitespace
+                    df = pd.read_csv(io.StringIO(table_str), delim_whitespace=True)
+                budget_data = {"departments": {}}
+                for _, row in df.iterrows():
+                    dept = str(row.get("Department", "")).strip()
+                    cat = str(row.get("Category", "")).strip()
+                    amt = float(row.get("Amount", 0))
+                    if not dept or not cat:
+                        continue
+                    if dept not in budget_data["departments"]:
+                        budget_data["departments"][dept] = {"total_budget": 0, "categories": {}}
+                    budget_data["departments"][dept]["categories"][cat] = {"budget": amt, "constraints": []}
+                    budget_data["departments"][dept]["total_budget"] += amt
+                self.budget_data = budget_data
+                return f"Budget rules structured from table. Found {len(budget_data['departments'])} departments.\n\nStructured data:\n{json.dumps(budget_data, indent=2)}"
+            # --- END NEW ---
+
             # Enhanced parsing logic using regex
             budget_data = {
                 "departments": {},

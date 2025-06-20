@@ -7,7 +7,7 @@ const expenseController = {
       const { amount, department, category, vendor, description } = req.body;
 
       // Validate required fields
-      if (!amount || !department || !category) {
+      if (!amount) {
         return res.status(400).json({
           success: false,
           error: 'Amount, department, and category are required'
@@ -27,6 +27,15 @@ const expenseController = {
 
       // Send to Real-Time Expense Tracker Agent
       const trackingResponse = await agentService.trackExpense(expenseData);
+
+      // Handle agentService errors (timeouts, failures)
+      if (!trackingResponse.success) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to track expense',
+          details: trackingResponse.details || trackingResponse.error || 'Unknown error'
+        });
+      }
 
       // Automatically trigger breach detection after tracking
       setTimeout(async () => {
