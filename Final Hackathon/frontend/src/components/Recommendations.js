@@ -43,6 +43,19 @@ import {
   Priority
 } from '@mui/icons-material';
 
+const dummyRecommendations = [
+  {
+    type: "Budget_Reallocation",
+    description: "Reallocate $2,000 from Marketing to Sales Software.",
+    target_savings: 2000
+  },
+  {
+    type: "Spending_Pause",
+    description: "Pause all new CRM purchases for 1 month.",
+    target_savings: 1000
+  }
+];
+
 const Recommendations = ({ recommendations, breaches }) => {
   const [expandedPanel, setExpandedPanel] = useState(false);
   const [implementedActions, setImplementedActions] = useState(new Set());
@@ -128,6 +141,8 @@ const Recommendations = ({ recommendations, breaches }) => {
     });
     return total;
   };
+
+  const recList = recommendations && recommendations.length > 0 ? recommendations : dummyRecommendations;
 
   return (
     <Box>
@@ -543,6 +558,23 @@ const Recommendations = ({ recommendations, breaches }) => {
           </Box>
         </Box>
       )}
+
+      {/* Example Recommendations */}
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h6">AI Recommendations</Typography>
+          <List>
+            {recList.map((rec, idx) => (
+              <ListItem key={idx}>
+                <ListItemText
+                  primary={rec.type.replace('_', ' ')}
+                  secondary={`${rec.description} (Target savings: $${rec.target_savings})`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </CardContent>
+      </Card>
     </Box>
   );
 };

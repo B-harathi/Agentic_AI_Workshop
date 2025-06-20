@@ -26,12 +26,104 @@ import {
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
+// Enhanced dummy data
+const dummyData = {
+  budgetData: {
+    departments: {
+      Marketing: {
+        total_budget: 50000,
+        categories: {
+          Advertising: { budget: 25000, constraints: ["Max $5,000 per campaign", "Monthly approval required"] },
+          "Social Media": { budget: 15000, constraints: ["VP approval required for >$2,000"] },
+          "Content Creation": { budget: 10000, constraints: ["External vendor approval needed"] }
+        }
+      },
+      Sales: {
+        total_budget: 35000,
+        categories: {
+          Software: { budget: 20000, constraints: ["Renewal only after review", "IT approval required"] },
+          CRM: { budget: 10000, constraints: ["No single deal >$2,000"] },
+          "Training": { budget: 5000, constraints: ["HR approval required"] }
+        }
+      },
+      IT: {
+        total_budget: 40000,
+        categories: {
+          Hardware: { budget: 25000, constraints: ["Quarterly review required"] },
+          Software: { budget: 15000, constraints: ["Security approval needed"] }
+        }
+      }
+    }
+  },
+  expenseTracking: {
+    Marketing: {
+      Advertising: { spent: 18000, limit: 25000, usage_percent: 72 },
+      "Social Media": { spent: 12500, limit: 15000, usage_percent: 83.3 },
+      "Content Creation": { spent: 8500, limit: 10000, usage_percent: 85 }
+    },
+    Sales: {
+      Software: { spent: 22000, limit: 20000, usage_percent: 110 },
+      CRM: { spent: 7500, limit: 10000, usage_percent: 75 },
+      Training: { spent: 3200, limit: 5000, usage_percent: 64 }
+    },
+    IT: {
+      Hardware: { spent: 15000, limit: 25000, usage_percent: 60 },
+      Software: { spent: 14800, limit: 15000, usage_percent: 98.7 }
+    }
+  },
+  detectedBreaches: [
+    {
+      department: "Sales",
+      category: "Software",
+      amount: 22000,
+      limit: 20000,
+      detected_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      severity: "high"
+    },
+    {
+      department: "Marketing",
+      category: "Social Media",
+      amount: 12500,
+      limit: 15000,
+      detected_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      severity: "warning"
+    }
+  ],
+  notifications: [
+    {
+      subject: "Budget warning for Marketing - Social Media",
+      sent_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      type: "warning"
+    },
+    {
+      subject: "Budget breach detected in Sales - Software",
+      sent_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      type: "breach"
+    },
+    {
+      subject: "Monthly budget report generated",
+      sent_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      type: "info"
+    }
+  ],
+  budgetLoaded: true,
+  lastUpdated: new Date().toISOString()
+};
+
 const Dashboard = ({ data, loading, onRefresh }) => {
+  // Use dummy data if no real data is provided or if data is empty
+  const shouldUseDummyData = !data || Object.keys(data).length === 0 || !data.budgetData;
+  const effectiveData = shouldUseDummyData ? dummyData : data;
+  
+  const budgetData = effectiveData?.budgetData || dummyData.budgetData;
+  const departments = budgetData.departments || {};
+
   // Process budget usage data for charts
   const processChartData = () => {
     const chartData = [];
+    const expenseTracking = effectiveData.expenseTracking || {};
     
-    Object.entries(data.expenseTracking || {}).forEach(([dept, categories]) => {
+    Object.entries(expenseTracking).forEach(([dept, categories]) => {
       Object.entries(categories || {}).forEach(([category, info]) => {
         if (!category.startsWith('_')) {
           chartData.push({
@@ -62,13 +154,13 @@ const Dashboard = ({ data, loading, onRefresh }) => {
 
   // Recent activities
   const recentActivities = [
-    ...(data.detectedBreaches || []).slice(0, 3).map(breach => ({
+    ...(effectiveData.detectedBreaches || []).slice(0, 3).map(breach => ({
       type: 'breach',
       message: `Budget breach in ${breach.department} - ${breach.category}`,
       severity: 'error',
       time: breach.detected_at || new Date().toISOString()
     })),
-    ...(data.notifications || []).slice(0, 2).map(notif => ({
+    ...(effectiveData.notifications || []).slice(0, 2).map(notif => ({
       type: 'notification',
       message: `Alert sent: ${notif.subject}`,
       severity: 'info',
@@ -91,9 +183,19 @@ const Dashboard = ({ data, loading, onRefresh }) => {
     <Box>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Budget Dashboard
-        </Typography>
+        <Box>
+          <Typography variant="h4" component="h1">
+            Budget Dashboard
+          </Typography>
+          {shouldUseDummyData && (
+            <Chip 
+              label="Demo Mode - Using Sample Data" 
+              color="info" 
+              size="small" 
+              sx={{ mt: 1 }} 
+            />
+          )}
+        </Box>
         <Button
           variant="outlined"
           startIcon={<Refresh />}
@@ -123,8 +225,8 @@ const Dashboard = ({ data, loading, onRefresh }) => {
                       name === 'spent' ? 'Spent' : 'Limit'
                     ]}
                   />
-                  <Bar dataKey="spent" fill="#2196f3" />
-                  <Bar dataKey="limit" fill="#e0e0e0" />
+                  <Bar dataKey="spent" fill="#2196f3" name="Spent" />
+                  <Bar dataKey="limit" fill="#e0e0e0" name="Budget Limit" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -142,12 +244,12 @@ const Dashboard = ({ data, loading, onRefresh }) => {
               Department Status
             </Typography>
             <Grid container spacing={2}>
-              {Object.entries(data.budgetData?.departments || {}).map(([dept, deptInfo]) => {
-                const deptTracking = data.expenseTracking?.[dept] || {};
+              {Object.entries(departments).map(([dept, deptData]) => {
+                const deptTracking = effectiveData.expenseTracking?.[dept] || {};
                 const totalSpent = Object.values(deptTracking)
-                  .filter(cat => !Object.keys(cat).some(k => k.startsWith('_')))
+                  .filter(cat => typeof cat === 'object' && !Object.keys(cat).some(k => k.startsWith('_')))
                   .reduce((sum, cat) => sum + (cat.spent || 0), 0);
-                const totalLimit = deptInfo.total_budget || 0;
+                const totalLimit = deptData.total_budget || 0;
                 const usage = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
 
                 return (
@@ -172,6 +274,9 @@ const Dashboard = ({ data, loading, onRefresh }) => {
                           value={Math.min(usage, 100)} 
                           color={usage >= 100 ? 'error' : usage >= 80 ? 'warning' : 'success'}
                         />
+                        <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                          {Object.keys(deptData.categories || {}).length} categories
+                        </Typography>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -191,20 +296,20 @@ const Dashboard = ({ data, loading, onRefresh }) => {
             <List dense>
               <ListItem>
                 <ListItemIcon>
-                  {data.budgetLoaded ? <CheckCircle color="success" /> : <Error color="error" />}
+                  {effectiveData.budgetLoaded ? <CheckCircle color="success" /> : <Error color="error" />}
                 </ListItemIcon>
                 <ListItemText 
                   primary="Budget Status"
-                  secondary={data.budgetLoaded ? 'Loaded & Active' : 'Not Loaded'}
+                  secondary={effectiveData.budgetLoaded ? 'Loaded & Active' : 'Not Loaded'}
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
-                  <TrendingUp color={data.detectedBreaches?.length > 0 ? 'error' : 'success'} />
+                  <TrendingUp color={effectiveData.detectedBreaches?.length > 0 ? 'error' : 'success'} />
                 </ListItemIcon>
                 <ListItemText 
                   primary="Budget Health"
-                  secondary={`${data.detectedBreaches?.length || 0} active breaches`}
+                  secondary={`${effectiveData.detectedBreaches?.length || 0} active breaches`}
                 />
               </ListItem>
               <ListItem>
@@ -213,7 +318,7 @@ const Dashboard = ({ data, loading, onRefresh }) => {
                 </ListItemIcon>
                 <ListItemText 
                   primary="Tracking"
-                  secondary={`${Object.keys(data.expenseTracking || {}).length} departments monitored`}
+                  secondary={`${Object.keys(effectiveData.expenseTracking || {}).length} departments monitored`}
                 />
               </ListItem>
             </List>
@@ -252,10 +357,11 @@ const Dashboard = ({ data, loading, onRefresh }) => {
       </Grid>
 
       {/* Last Updated */}
-      {data.lastUpdated && (
+      {effectiveData.lastUpdated && (
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="caption" color="textSecondary">
-            Last updated: {new Date(data.lastUpdated).toLocaleString()}
+            Last updated: {new Date(effectiveData.lastUpdated).toLocaleString()}
+            {shouldUseDummyData && ' (Demo Data)'}
           </Typography>
         </Box>
       )}

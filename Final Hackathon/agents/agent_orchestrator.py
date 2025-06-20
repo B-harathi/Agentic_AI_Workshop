@@ -90,41 +90,57 @@ async def get_agents_status():
 
 @app.post("/upload-budget")
 async def upload_budget_file(file: UploadFile = File(...)):
-    """
-    Step 1: Upload Company Budget File (Excel or PDF)
-    → Budget Policy Loader Agent (RAG) extracts department/vendor/category budget thresholds
-    """
     try:
         # Save uploaded file
         os.makedirs(config.UPLOAD_PATH, exist_ok=True)
         file_path = f"{config.UPLOAD_PATH}/{file.filename}"
-        
         with open(file_path, "wb") as buffer:
             content = await file.read()
             buffer.write(content)
-        
-        # Step 1: Extract budget from file
+
+        # Step 1: Extract and structure budget
         extract_result = budget_loader.execute(f"extract_budget_from_file:{file_path}")
-        
-        # Step 2: Structure budget rules
         structure_result = budget_loader.execute("structure_budget_rules:extracted_content")
-        
-        # Step 3: Create RAG vector store
         rag_result = budget_loader.execute("create_rag_vectorstore:extracted_content")
-        
-        # Store budget data globally
         global_state["budget_data"] = budget_loader.get_budget_data()
-        
+
+        # Step 2: Load budget thresholds into Expense Tracker
+        if global_state["budget_data"]:
+            expense_tracker.execute(f"load_budget_thresholds:{json.dumps(global_state['budget_data'])}")
+
+        # Step 3: (Optional) Track initial expenses if present in the file
+        # (Add logic here if your file contains expenses)
+
+        # Step 4: Run expense tracking and breach detection
+        if global_state["budget_data"]:
+            expense_tracker.execute("calculate_budget_usage:all")
+            global_state["expense_tracking"] = expense_tracker.get_current_usage_data()
+            breach_detector.execute(f"analyze_expense_data:{json.dumps(global_state['expense_tracking'])}")
+            global_state["detected_breaches"] = breach_detector.get_detected_breaches()
+
+        # Step 5: Run recommendations
+        if global_state["detected_breaches"]:
+            correction_recommender.execute(f"analyze_breach_context:{json.dumps(global_state['detected_breaches'])}")
+            global_state["recommendations"] = correction_recommender.get_all_recommendations()
+
+        # Step 6: Run escalation
+        if global_state["detected_breaches"]:
+            escalation_data = {
+                "breaches": global_state["detected_breaches"],
+                "recommendations": global_state["recommendations"]
+            }
+            escalation_communicator.execute(f"create_breach_notification:{json.dumps(escalation_data)}")
+            global_state["notifications"] = escalation_communicator.get_notification_history()
+
         return {
             "success": True,
-            "message": "Budget file processed successfully",
-            "file_name": file.filename,
-            "extraction_result": extract_result,
-            "structure_result": structure_result,
-            "rag_result": rag_result,
-            "budget_data": global_state["budget_data"]
+            "message": "Budget file processed and full workflow executed.",
+            "budget_data": global_state["budget_data"],
+            "expense_tracking": global_state["expense_tracking"],
+            "detected_breaches": global_state["detected_breaches"],
+            "recommendations": global_state["recommendations"],
+            "notifications": global_state["notifications"]
         }
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing budget file: {str(e)}")
 

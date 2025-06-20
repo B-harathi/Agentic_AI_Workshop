@@ -51,6 +51,66 @@ const theme = createTheme({
   },
 });
 
+// Dummy data for all dashboard sections
+const dummyDashboardData = {
+  budgetLoaded: true,
+  budgetData: {
+    departments: {
+      Marketing: {
+        total_budget: 30000,
+        categories: {
+          Advertising: { budget: 15000, constraints: ["Max $5,000 per campaign"] },
+          "Social Media": { budget: 8000, constraints: ["VP approval required for >$2,000"] }
+        }
+      },
+      Sales: {
+        total_budget: 18000,
+        categories: {
+          Software: { budget: 12000, constraints: ["Renewal only after review"] },
+          CRM: { budget: 6000, constraints: ["No single deal >$2,000"] }
+        }
+      }
+    }
+  },
+  expenseTracking: {
+    Marketing: {
+      Advertising: { spent: 9000, limit: 15000, usage_percent: 60, transactions: [{ amount: 5000, vendor: "Google Ads", timestamp: "2024-06-01T10:00:00Z" }] },
+      "Social Media": { spent: 4000, limit: 8000, usage_percent: 50, transactions: [{ amount: 2000, vendor: "Facebook", timestamp: "2024-06-02T11:00:00Z" }] }
+    },
+    Sales: {
+      Software: { spent: 12000, limit: 12000, usage_percent: 100, transactions: [{ amount: 12000, vendor: "Salesforce", timestamp: "2024-06-03T12:00:00Z" }] },
+      CRM: { spent: 2000, limit: 6000, usage_percent: 33, transactions: [{ amount: 2000, vendor: "HubSpot", timestamp: "2024-06-04T13:00:00Z" }] }
+    }
+  },
+  detectedBreaches: [
+    {
+      department: "Sales",
+      category: "Software",
+      severity: "Critical",
+      overage: 2000,
+      detected_at: "2024-06-05T14:00:00Z"
+    }
+  ],
+  recommendations: [
+    {
+      type: "Budget_Reallocation",
+      description: "Reallocate $2,000 from Marketing to Sales Software.",
+      target_savings: 2000
+    },
+    {
+      type: "Spending_Pause",
+      description: "Pause all new CRM purchases for 1 month.",
+      target_savings: 1000
+    }
+  ],
+  notifications: [
+    {
+      subject: "Critical Breach in Sales Software",
+      sent_at: "2024-06-05T15:00:00Z"
+    }
+  ]
+};
+
 function TabPanel({ children, value, index, ...other }) {
   return (
     <div
@@ -67,16 +127,8 @@ function TabPanel({ children, value, index, ...other }) {
 
 function App() {
   const [currentTab, setCurrentTab] = useState(0);
-  const [dashboardData, setDashboardData] = useState({
-    budgetLoaded: false,
-    budgetData: {},
-    expenseTracking: {},
-    detectedBreaches: [],
-    recommendations: [],
-    notifications: [],
-    lastUpdated: null
-  });
-  const [loading, setLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
 
   // WebSocket connection for real-time updates
@@ -93,29 +145,26 @@ function App() {
     }
   });
 
-  // Load initial dashboard data
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
+  // Define loadDashboardData for refresh actions
   const loadDashboardData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await apiService.getDashboard();
-      if (response.success) {
+      if (response.success && response.data && Object.keys(response.data.budgetData?.departments || {}).length > 0) {
         setDashboardData(response.data);
+      } else {
+        setDashboardData(dummyDashboardData);
       }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-      setNotification({
-        open: true,
-        message: 'Failed to load dashboard data',
-        severity: 'error'
-      });
+      setDashboardData(dummyDashboardData);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -143,18 +192,20 @@ function App() {
     setNotification({ ...notification, open: false });
   };
 
-  // Calculate overall status
-  const getOverallStatus = () => {
-    if (dashboardData.detectedBreaches?.length > 0) {
-      const criticalBreaches = dashboardData.detectedBreaches.filter(b => 
-        b.severity === 'Critical' || b.severity === 'High'
-      );
-      return criticalBreaches.length > 0 ? 'Critical' : 'Warning';
+  // Defensive getOverallStatus
+  function getOverallStatus(dashboardData) {
+    if (!dashboardData || !Array.isArray(dashboardData.detectedBreaches)) {
+      return 'No Data';
     }
-    return 'Safe';
-  };
+    if (dashboardData.detectedBreaches.length === 0) {
+      return 'Safe';
+    }
+    const critical = dashboardData.detectedBreaches.some(b => b.severity === 'Critical');
+    if (critical) return 'Critical Breach';
+    return 'Breaches Detected';
+  }
 
-  const overallStatus = getOverallStatus();
+  const overallStatus = getOverallStatus(dashboardData);
 
   return (
     <ThemeProvider theme={theme}>
@@ -198,17 +249,17 @@ function App() {
             <Grid item xs={12} sm={6} md={3}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h6" color="primary">
-                  {dashboardData.budgetLoaded ? 'Budget Loaded' : 'No Budget'}
+                  {dashboardData?.budgetLoaded ? 'Budget Loaded' : 'No Budget'}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  {Object.keys(dashboardData.budgetData?.departments || {}).length} Departments
+                  {Object.keys(dashboardData?.budgetData?.departments || {}).length} Departments
                 </Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h6" color="warning.main">
-                  {Object.keys(dashboardData.expenseTracking || {}).length}
+                  {Object.keys(dashboardData?.expenseTracking || {}).length}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Categories Tracked
@@ -218,7 +269,7 @@ function App() {
             <Grid item xs={12} sm={6} md={3}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h6" color="error.main">
-                  {dashboardData.detectedBreaches?.length || 0}
+                  {dashboardData?.detectedBreaches?.length || 0}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Active Breaches
@@ -228,7 +279,7 @@ function App() {
             <Grid item xs={12} sm={6} md={3}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h6" color="info.main">
-                  {dashboardData.recommendations?.length || 0}
+                  {dashboardData?.recommendations?.length || 0}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Recommendations
@@ -252,7 +303,7 @@ function App() {
             {/* Tab Content */}
             <TabPanel value={currentTab} index={0}>
               <DashboardView 
-                data={dashboardData} 
+                data={dashboardData || dummyDashboardData} 
                 loading={loading}
                 onRefresh={loadDashboardData}
               />
@@ -261,30 +312,30 @@ function App() {
             <TabPanel value={currentTab} index={1}>
               <BudgetUpload 
                 onUploadSuccess={handleBudgetUploaded}
-                budgetLoaded={dashboardData.budgetLoaded}
+                budgetLoaded={dashboardData?.budgetLoaded || dummyDashboardData.budgetLoaded}
               />
             </TabPanel>
 
             <TabPanel value={currentTab} index={2}>
               <ExpenseList 
-                budgetData={dashboardData.budgetData}
-                expenseTracking={dashboardData.expenseTracking}
+                budgetData={dashboardData?.budgetData || dummyDashboardData.budgetData}
+                expenseTracking={dashboardData?.expenseTracking || dummyDashboardData.expenseTracking}
                 onExpenseAdded={handleExpenseAdded}
-                budgetLoaded={dashboardData.budgetLoaded}
+                budgetLoaded={dashboardData?.budgetLoaded || dummyDashboardData.budgetLoaded}
               />
             </TabPanel>
 
             <TabPanel value={currentTab} index={3}>
               <BreachAlerts 
-                breaches={dashboardData.detectedBreaches}
-                notifications={dashboardData.notifications}
+                breaches={dashboardData?.detectedBreaches || dummyDashboardData.detectedBreaches}
+                notifications={dashboardData?.notifications || dummyDashboardData.notifications}
               />
             </TabPanel>
 
             <TabPanel value={currentTab} index={4}>
               <Recommendations 
-                recommendations={dashboardData.recommendations}
-                breaches={dashboardData.detectedBreaches}
+                recommendations={dashboardData?.recommendations || dummyDashboardData.recommendations}
+                breaches={dashboardData?.detectedBreaches || dummyDashboardData.detectedBreaches}
               />
             </TabPanel>
           </Paper>

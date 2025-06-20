@@ -100,7 +100,12 @@ const agentService = {
   getDashboardData: async () => {
     try {
       const response = await agentClient.get('/dashboard-data');
-      return response.data.dashboard_data || response.data;
+      if (!response || !response.data) {
+        throw new Error('No data received from agent');
+      }
+      // Defensive: ensure dashboard_data is an object
+      const data = response.data.dashboard_data || response.data;
+      return typeof data === 'object' && data !== null ? data : {};
     } catch (error) {
       console.error('Error getting dashboard data from agent:', error.message);
       // Return empty dashboard data if agents are unavailable
