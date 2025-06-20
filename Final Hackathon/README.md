@@ -90,5 +90,5 @@ Extensible: Add new agents or endpoints as needed.
 Production-Ready: For production, add authentication, HTTPS, persistent vector storage, and robust error handling.
 Customizable: Easily adapt to different budget formats and business rules.
 
-Document link : - https://docs.google.com/document/d/1bmDeO8BIS23Kqm-7NaFgUkoCHzs-6B8O1HZMNORB7z8/edit?usp=sharing
-Video Link -
+Document link : - https://drive.google.com/file/d/1plHZZwofup90ymIV_HGV4SVhoo2FmuGs/view?usp=sharing
+Video Link - https://drive.google.com/file/d/1bqjpPK07ntaH7Sr-av-911eT5cFdGnAD/view?usp=sharing
