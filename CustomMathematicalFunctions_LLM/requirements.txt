@@ -1,0 +1,7 @@
+langgraph
+typing-extensions
+langchain
+langchain-core
+langchain-google-genai
+python-dotenv
+streamlit 
